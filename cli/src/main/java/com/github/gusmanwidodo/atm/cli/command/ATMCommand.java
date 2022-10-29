@@ -34,8 +34,12 @@ public class ATMCommand {
 
     @ShellMethod(key = "deposit", value = "Deposits this amount to the logged in customer")
     public void deposit(@ShellOption double amount) {
-        double balance = 0 + amount;
-        printBalance(balance);
+        HashMap<String, Long> authData = atmService.getAuthData();
+        Account account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
+        atmService.deposit(account.getId(), amount);
+
+        account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
+        printBalance(account.getBalanceAmount());
     }
 
     @ShellMethod(key = "transfer", value = "Deposits this amount to the logged in customer")
@@ -50,8 +54,9 @@ public class ATMCommand {
 
     @ShellMethod(key = "logout", value = "Logs out of the current customer")
     public void logout() {
-        String userName = "Alice";
-        System.out.println("Goodbye, " + userName + "!");
+        HashMap<String, Long> authData = atmService.getAuthData();
+        Customer customer = atmService.getCustomer(authData.get(AuthData.CUSTOMER_ID));
+        System.out.println("Goodbye, " + customer.getUserName() + "!");
     }
 
     void printBalance(double balance) {
