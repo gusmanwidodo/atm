@@ -1,9 +1,15 @@
 package com.github.gusmanwidodo.atm.core.model;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import java.time.LocalDate;
 import java.util.Objects;
 
+@Entity
 public class Payment {
+    @Id
+    @GeneratedValue
     private long id;
     private long accountId;
     private String fromAccountBank;

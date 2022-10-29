@@ -45,6 +45,10 @@ public class Customer {
         return userName;
     }
 
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+
     public void setUserName(String userName) {
         this.userName = userName;
     }
