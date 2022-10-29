@@ -50,8 +50,8 @@ public class ATMServiceImpl implements ATMService {
     }
 
     @Override
-    public void logout(long customerId) {
-
+    public void logout() {
+        authData = new HashMap<String, Long>();
     }
 
     @Override

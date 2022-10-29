@@ -95,8 +95,26 @@ public class ATMServiceTest {
 
     @Test
     public void testLogout() {
-        Assert.assertEquals(0, 0);
+        Customer customer = customers.get(0);
+        Account account = accounts.get(0);
 
+        // mockup
+        when(customerRepository.findByUserName(customer.getUserName())).thenReturn(Optional.of(customer));
+        when(accountRepository.findByCustomerId(customer.getId())).thenReturn(Optional.of(account));
+        atmService = new ATMServiceImpl(customerRepository, accountRepository);
+
+        // business logic here
+        atmService.login(customer.getUserName());
+
+        HashMap<String, Long> authData = atmService.getAuthData();
+
+        Assert.assertEquals(authData.get("customerId"), customer.getId());
+        Assert.assertEquals(authData.get("accountId"), account.getId());
+
+        // flash session
+        atmService.logout();
+
+        Assert.assertEquals(atmService.getAuthData().isEmpty(), true);
     }
 
     @Test
