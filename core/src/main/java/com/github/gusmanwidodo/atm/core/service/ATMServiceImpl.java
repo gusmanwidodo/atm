@@ -54,6 +54,11 @@ public class ATMServiceImpl implements ATMService {
     @Override
     public void login(String userName) {
         Optional<Customer> optCustomer = customerRepository.findByUserName(userName);
+        if (optCustomer.isEmpty()) {
+            register(userName);
+            optCustomer = customerRepository.findByUserName(userName);
+        }
+
         Customer customer = optCustomer.get();
 
         Optional<Account> optAccount = accountRepository.findByCustomerId(customer.getId());
@@ -61,6 +66,29 @@ public class ATMServiceImpl implements ATMService {
 
         authData.put(AuthData.CUSTOMER_ID, customer.getId());
         authData.put(AuthData.ACCOUNT_ID, account.getId());
+    }
+
+    void register(String userName) {
+        Customer customer = new Customer();
+        customer.setUserName(userName);
+        customer.setFirstName(userName);
+        customer.setLastName(userName);
+        customer.setStatus(Status.ACTIVE);
+
+        LocalDate now = LocalDate.now();
+        customer.setCreatedAt(now);
+        customer.setUpdatedAt(now);
+        customerRepository.save(customer);
+
+        long accountNumber = 999999999 + customer.getId();
+
+        Account account = new Account();
+        account.setCustomerId(customer.getId());
+        account.setNumber(Long.toString(accountNumber));
+        account.setBalanceAmount(0);
+        account.setStatus(Status.ACTIVE);
+
+        accountRepository.save(account);
     }
 
     @Override
