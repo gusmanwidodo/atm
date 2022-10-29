@@ -1,4 +1,7 @@
 package com.github.gusmanwidodo.atm.core.repository;
 
-public interface AccountRepository {
+import com.github.gusmanwidodo.atm.core.model.Account;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AccountRepository extends JpaRepository<Account, Long> {
 }

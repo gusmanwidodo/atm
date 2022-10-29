@@ -2,6 +2,7 @@ package com.github.gusmanwidodo.atm.core.service;
 
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
+import com.github.gusmanwidodo.atm.core.repository.AccountRepository;
 import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,11 +20,12 @@ import static org.mockito.Mockito.when;
 public class ATMServiceTest {
     public List<Customer> customers;
     public List<Account> accounts;
-
     public ATMService atmService;
 
     @Mock
     public CustomerRepository customerRepository;
+    @Mock
+    public AccountRepository accountRepository;
 
     public ATMServiceTest() {
         LocalDate now = LocalDate.now();
@@ -47,7 +49,7 @@ public class ATMServiceTest {
 
         // mockup
         when(customerRepository.findById(expected.getId())).thenReturn(Optional.of(expected));
-        atmService = new ATMServiceImpl(customerRepository);
+        atmService = new ATMServiceImpl(customerRepository, accountRepository);
 
         // business logic here
         Customer actual = atmService.getCustomer(expected.getId());
@@ -58,8 +60,17 @@ public class ATMServiceTest {
 
     @Test
     public void testGetAccount() {
-        Assert.assertEquals(0, 0);
+        Account expected = accounts.get(0);
 
+        // mockup
+        when(accountRepository.findById(expected.getId())).thenReturn(Optional.of(expected));
+        atmService = new ATMServiceImpl(customerRepository, accountRepository);
+
+        // business logic here
+        Account actual = atmService.getAccount(expected.getId());
+
+
+        Assert.assertEquals(actual.equals(expected), true);
     }
 
     @Test
