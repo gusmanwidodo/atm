@@ -12,6 +12,7 @@ import org.testng.Assert;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,8 +76,21 @@ public class ATMServiceTest {
 
     @Test
     public void testLogin() {
-        Assert.assertEquals(0, 0);
+        Customer customer = customers.get(0);
+        Account account = accounts.get(0);
 
+        // mockup
+        when(customerRepository.findByUserName(customer.getUserName())).thenReturn(Optional.of(customer));
+        when(accountRepository.findByCustomerId(customer.getId())).thenReturn(Optional.of(account));
+        atmService = new ATMServiceImpl(customerRepository, accountRepository);
+
+        // business logic here
+        atmService.login(customer.getUserName());
+
+        HashMap<String, Long> authData = atmService.getAuthData();
+
+        Assert.assertEquals(authData.get("customerId"), customer.getId());
+        Assert.assertEquals(authData.get("accountId"), account.getId());
     }
 
     @Test
