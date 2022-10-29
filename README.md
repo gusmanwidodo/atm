@@ -34,5 +34,28 @@ $ mvn spring-boot:run
 ### Entity Relational Diagram (ERD)
 ![App Architecture](./atm-cli-erd.png?raw=true "App Architecture")
 
+### Structure
+#### Core Module
+```shell
+➜  atm git:(main) ✗ tree core/src/main/java/com/github/gusmanwidodo/atm/core
+core/src/main/java/com/github/gusmanwidodo/atm/core
+|-- model
+|   |-- Account.java
+|   |-- Customer.java
+|   |-- Payment.java
+|   `-- Transaction.java
+|-- repository
+|   |-- AccountRepository.java
+|   |-- CustomerRepository.java
+|   |-- PaymentRepository.java
+|   `-- TransactionRepository.java
+`-- service
+    |-- ATMService.java
+    `-- ATMServiceImpl.java
+
+3 directories, 10 files
+
+```
+
 ## Author
 - [Gusman Widodo](https://linkedin.com/gusmanwidodo) <[gusmanwidodo@gmail.com](mailto:gusmanwidodo@gmail.com)>
