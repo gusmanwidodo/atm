@@ -2,11 +2,21 @@ package com.github.gusmanwidodo.atm.core.service;
 
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
+import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
+
+import java.util.Optional;
 
 public class ATMServiceImpl implements ATMService {
+    private final CustomerRepository customerRepository;
+
+    public ATMServiceImpl(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
+    }
+
     @Override
     public Customer getCustomer(long customerId) {
-        return null;
+        Optional<Customer> customer = customerRepository.findById(customerId);
+        return customer.get();
     }
 
     @Override

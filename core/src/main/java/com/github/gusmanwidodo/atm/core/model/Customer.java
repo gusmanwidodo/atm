@@ -1,9 +1,16 @@
 package com.github.gusmanwidodo.atm.core.model;
 
+import javax.annotation.processing.Generated;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import java.time.LocalDate;
 import java.util.Objects;
 
+@Entity
 public class Customer {
+    @Id
+    @GeneratedValue
     private long id;
     private String userName;
     private String firstName;

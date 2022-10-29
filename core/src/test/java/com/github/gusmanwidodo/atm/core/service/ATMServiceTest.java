@@ -2,18 +2,28 @@ package com.github.gusmanwidodo.atm.core.service;
 
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
+import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.Mockito.when;
 
 public class ATMServiceTest {
-    private List<Customer> customers;
-    private List<Account> accounts;
+    public List<Customer> customers;
+    public List<Account> accounts;
 
-    private ATMService atmService;
+    public ATMService atmService;
+
+    @Mock
+    public CustomerRepository customerRepository;
 
     public ATMServiceTest() {
         LocalDate now = LocalDate.now();
@@ -22,44 +32,56 @@ public class ATMServiceTest {
         customers.add(new Customer(1, "alice", "Alice", "Perry", "active", now, now));
 
         accounts = new ArrayList<Account>();
+        accounts.add(new Account(1, 1, "987654321", 100, "active", now, now));
+    }
 
-        atmService = new ATMServiceImpl();
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    void testGetCustomer() {
+    public void testGetCustomer() {
         Customer expected = customers.get(0);
+
+        // mockup
+        when(customerRepository.findById(expected.getId())).thenReturn(Optional.of(expected));
+        atmService = new ATMServiceImpl(customerRepository);
+
+        // business logic here
         Customer actual = atmService.getCustomer(expected.getId());
+
 
         Assert.assertEquals(actual.equals(expected), true);
     }
 
     @Test
-    void testGetAccount() {
+    public void testGetAccount() {
         Assert.assertEquals(0, 0);
 
     }
 
     @Test
-    void testLogin() {
+    public void testLogin() {
         Assert.assertEquals(0, 0);
 
     }
 
     @Test
-    void testLogout() {
+    public void testLogout() {
         Assert.assertEquals(0, 0);
 
     }
 
     @Test
-    void testDeposit() {
+    public void testDeposit() {
         Assert.assertEquals(0, 0);
 
     }
 
     @Test
-    void testTransfer() {
+    public void testTransfer() {
         Assert.assertEquals(0, 0);
 
     }
