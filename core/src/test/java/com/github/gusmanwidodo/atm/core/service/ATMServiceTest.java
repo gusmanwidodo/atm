@@ -1,5 +1,6 @@
 package com.github.gusmanwidodo.atm.core.service;
 
+import com.github.gusmanwidodo.atm.core.constant.AuthData;
 import com.github.gusmanwidodo.atm.core.constant.Bank;
 import com.github.gusmanwidodo.atm.core.constant.Status;
 import com.github.gusmanwidodo.atm.core.model.Account;
@@ -102,8 +103,8 @@ public class ATMServiceTest {
 
         HashMap<String, Long> authData = atmService.getAuthData();
 
-        Assert.assertEquals(authData.get("customerId"), customer.getId());
-        Assert.assertEquals(authData.get("accountId"), account.getId());
+        Assert.assertEquals(authData.get(AuthData.CUSTOMER_ID), customer.getId());
+        Assert.assertEquals(authData.get(AuthData.ACCOUNT_ID), account.getId());
     }
 
     @Test
@@ -121,8 +122,8 @@ public class ATMServiceTest {
 
         HashMap<String, Long> authData = atmService.getAuthData();
 
-        Assert.assertEquals(authData.get("customerId"), customer.getId());
-        Assert.assertEquals(authData.get("accountId"), account.getId());
+        Assert.assertEquals(authData.get(AuthData.CUSTOMER_ID), customer.getId());
+        Assert.assertEquals(authData.get(AuthData.ACCOUNT_ID), account.getId());
 
         // flash session
         atmService.logout();

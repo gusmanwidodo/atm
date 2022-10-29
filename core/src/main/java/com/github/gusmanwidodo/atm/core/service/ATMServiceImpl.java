@@ -1,5 +1,6 @@
 package com.github.gusmanwidodo.atm.core.service;
 
+import com.github.gusmanwidodo.atm.core.constant.AuthData;
 import com.github.gusmanwidodo.atm.core.constant.Bank;
 import com.github.gusmanwidodo.atm.core.constant.Status;
 import com.github.gusmanwidodo.atm.core.model.Account;
@@ -10,10 +11,13 @@ import com.github.gusmanwidodo.atm.core.repository.AccountRepository;
 import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
 import com.github.gusmanwidodo.atm.core.repository.PaymentRepository;
 import com.github.gusmanwidodo.atm.core.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
 
+@Service
 public class ATMServiceImpl implements ATMService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
@@ -21,6 +25,7 @@ public class ATMServiceImpl implements ATMService {
     private final PaymentRepository paymentRepository;
     private HashMap<String, Long> authData;
 
+    @Autowired
     public ATMServiceImpl(CustomerRepository customerRepository, AccountRepository accountRepository, TransactionRepository transactionRepository, PaymentRepository paymentRepository) {
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
@@ -54,8 +59,8 @@ public class ATMServiceImpl implements ATMService {
         Optional<Account> optAccount = accountRepository.findByCustomerId(customer.getId());
         Account account = optAccount.get();
 
-        authData.put("customerId", customer.getId());
-        authData.put("accountId", account.getId());
+        authData.put(AuthData.CUSTOMER_ID, customer.getId());
+        authData.put(AuthData.ACCOUNT_ID, account.getId());
     }
 
     @Override
