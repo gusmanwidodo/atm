@@ -20,14 +20,11 @@ public class Transaction {
     private double totalBalance;
     private LocalDate createdAt;
 
-    @OneToOne
-    private Payment payment;
-
     public Transaction() {
 
     }
 
-    public Transaction(long id, long accountId, long refId, String refType, double amount, double prevBalance, double totalBalance, LocalDate createdAt, Payment payment) {
+    public Transaction(long id, long accountId, long refId, String refType, double amount, double prevBalance, double totalBalance, LocalDate createdAt) {
         this.id = id;
         this.accountId = accountId;
         this.refId = refId;
@@ -36,7 +33,6 @@ public class Transaction {
         this.prevBalance = prevBalance;
         this.totalBalance = totalBalance;
         this.createdAt = createdAt;
-        this.payment = payment;
     }
 
     public long getId() {
@@ -101,14 +97,6 @@ public class Transaction {
 
     public void setCreatedAt(LocalDate createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public Payment getPayment() {
-        return payment;
-    }
-
-    public void setPayment(Payment payment) {
-        this.payment = payment;
     }
 
     @Override

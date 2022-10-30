@@ -4,6 +4,7 @@ import com.github.gusmanwidodo.atm.core.constant.AuthData;
 import com.github.gusmanwidodo.atm.core.constant.Bank;
 import com.github.gusmanwidodo.atm.core.constant.RefType;
 import com.github.gusmanwidodo.atm.core.constant.Status;
+import com.github.gusmanwidodo.atm.core.exception.AmountInvalidException;
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
 import com.github.gusmanwidodo.atm.core.model.Payment;
@@ -13,11 +14,12 @@ import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
 import com.github.gusmanwidodo.atm.core.repository.PaymentRepository;
 import com.github.gusmanwidodo.atm.core.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ATMServiceImpl implements ATMService {
@@ -112,6 +114,10 @@ public class ATMServiceImpl implements ATMService {
 
     @Override
     public void deposit(long accountId, double amount) {
+        if (amount < 0) {
+            throw new AmountInvalidException();
+        }
+
         Account account = this.getAccount(accountId);
         double newBalanceAmount = account.getBalanceAmount() + amount;
 
@@ -138,6 +144,10 @@ public class ATMServiceImpl implements ATMService {
 
     @Override
     public void withdraw(long accountId, double amount) {
+        if (amount < 0) {
+            throw new AmountInvalidException();
+        }
+
         Account account = this.getAccount(accountId);
         double newBalanceAmount = account.getBalanceAmount() - amount;
 
@@ -155,6 +165,9 @@ public class ATMServiceImpl implements ATMService {
 
     @Override
     public void transfer(long accountId, double amount, String accountBank, String accountNumber, String accountHolder) {
+        if (amount < 0) {
+            throw new AmountInvalidException();
+        }
 
         // sender
         Account fromAccount = this.getAccount(accountId);
@@ -166,10 +179,10 @@ public class ATMServiceImpl implements ATMService {
 
         // manage transfer
         TransferManager transferManager = new TransferManager(
-            fromAccount.getBalanceAmount(),
-            fromAccount.getOwedAmount(),
-            toAccount.getBalanceAmount(),
-            toAccount.getOwedAmount()
+                fromAccount.getBalanceAmount(),
+                fromAccount.getOwedAmount(),
+                toAccount.getBalanceAmount(),
+                toAccount.getOwedAmount()
         );
 
         transferManager.transfer(amount);
