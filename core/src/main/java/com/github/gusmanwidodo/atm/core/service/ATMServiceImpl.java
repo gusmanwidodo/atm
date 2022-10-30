@@ -2,6 +2,7 @@ package com.github.gusmanwidodo.atm.core.service;
 
 import com.github.gusmanwidodo.atm.core.constant.AuthData;
 import com.github.gusmanwidodo.atm.core.constant.Bank;
+import com.github.gusmanwidodo.atm.core.constant.RefType;
 import com.github.gusmanwidodo.atm.core.constant.Status;
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
@@ -12,6 +13,7 @@ import com.github.gusmanwidodo.atm.core.repository.CustomerRepository;
 import com.github.gusmanwidodo.atm.core.repository.PaymentRepository;
 import com.github.gusmanwidodo.atm.core.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -41,8 +43,20 @@ public class ATMServiceImpl implements ATMService {
     }
 
     @Override
+    public Customer getBeneficiary(String userName) {
+        Optional<Customer> customer = customerRepository.findByUserName(userName);
+        return customer.get();
+    }
+
+    @Override
     public Account getAccount(long accountId) {
         Optional<Account> account = accountRepository.findById(accountId);
+        return account.get();
+    }
+
+    @Override
+    public Account getBeneficiaryAccount(long customerId) {
+        Optional<Account> account = accountRepository.findByCustomerId(customerId);
         return account.get();
     }
 
@@ -102,7 +116,24 @@ public class ATMServiceImpl implements ATMService {
         double newBalanceAmount = account.getBalanceAmount() + amount;
 
         Transaction transaction = new Transaction();
-        transaction.setAmount(amount);
+        transaction.setAmount(+amount);
+        transaction.setAccountId(accountId);
+        transaction.setTotalBalance(newBalanceAmount);
+        transaction.setCreatedAt(LocalDate.now());
+        transactionRepository.save(transaction);
+
+        account.setBalanceAmount(newBalanceAmount);
+        account.setUpdatedAt(LocalDate.now());
+        accountRepository.save(account);
+    }
+
+    @Override
+    public void withdraw(long accountId, double amount) {
+        Account account = this.getAccount(accountId);
+        double newBalanceAmount = account.getBalanceAmount() - amount;
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(-amount);
         transaction.setAccountId(accountId);
         transaction.setTotalBalance(newBalanceAmount);
         transaction.setCreatedAt(LocalDate.now());
@@ -121,16 +152,15 @@ public class ATMServiceImpl implements ATMService {
         Account toAccount = accountRepository.findByNumber(accountNumber).get();
         Customer toCustomer = this.getCustomer(toAccount.getCustomerId());
 
-        // subtract sender balance
-        Transaction transaction1 = new Transaction();
-        transaction1.setAmount(-amount);
-        transaction1.setAccountId(fromAccount.getId());
-        transaction1.setTotalBalance(fromAccount.getBalanceAmount());
-        transaction1.setCreatedAt(LocalDate.now());
-        transactionRepository.save(transaction1);
+        double transactionAmount = -amount;
+        double prevBalance = fromAccount.getBalanceAmount();
+        double totalBalance = prevBalance + transactionAmount;
+        double owedBalance = fromAccount.getOwedAmount();
 
-        fromAccount.setBalanceAmount(fromAccount.getBalanceAmount() - amount);
-        accountRepository.save(fromAccount);
+        if (totalBalance < 0) {
+            owedBalance += totalBalance;
+            totalBalance = 0;
+        }
 
         // create payment record
         Payment payment = new Payment();
@@ -138,16 +168,30 @@ public class ATMServiceImpl implements ATMService {
         payment.setAccountId(fromAccount.getId());
         payment.setFromAccountBank(Bank.INTERNAL);
         payment.setFromAccountNumber(fromAccount.getNumber());
-        payment.setFromAccountHolder(fromCustomer.getFullName());
+        payment.setFromAccountHolder(fromCustomer.getUserName());
         payment.setToAccountBank(Bank.INTERNAL);
         payment.setToAccountNumber(toAccount.getNumber());
-        payment.setToAccountHolder(toCustomer.getFullName());
+        payment.setToAccountHolder(toCustomer.getUserName());
         payment.setFee(0);
         payment.setStatus(Status.PENDING);
         LocalDate now = LocalDate.now();
         payment.setCreatedAt(now);
         payment.setUpdatedAt(now);
         paymentRepository.save(payment);
+
+        Transaction transaction1 = new Transaction();
+        transaction1.setRefId(payment.getId());
+        transaction1.setRefType(RefType.TRANSFER);
+        transaction1.setPrevBalance(prevBalance);
+        transaction1.setAmount(transactionAmount);
+        transaction1.setAccountId(fromAccount.getId());
+        transaction1.setTotalBalance(totalBalance);
+        transaction1.setCreatedAt(LocalDate.now());
+        transactionRepository.save(transaction1);
+
+        fromAccount.setBalanceAmount(totalBalance);
+        fromAccount.setOwedAmount(owedBalance);
+        accountRepository.save(fromAccount);
 
         // add beneficiary balance
         toAccount.setBalanceAmount(toAccount.getBalanceAmount() + amount);
@@ -163,5 +207,11 @@ public class ATMServiceImpl implements ATMService {
         transactionRepository.save(transaction2);
 
         accountRepository.save(toAccount);
+    }
+
+    @Override
+    public List<Transaction> GetOwedTransactions(long accountId) {
+        List<Transaction> transactions = transactionRepository.findByOwedBalance(accountId, RefType.TRANSFER);
+        return transactions;
     }
 }

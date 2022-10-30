@@ -138,7 +138,7 @@ public class ATMServiceTest {
         double newBalance = account.getBalanceAmount() + amountToDeposit;
 
         Transaction transaction = new Transaction();
-        transaction.setAmount(amountToDeposit);
+        transaction.setAmount(+amountToDeposit);
         transaction.setAccountId(account.getId());
         transaction.setTotalBalance(newBalance);
         transaction.setCreatedAt(LocalDate.now());
@@ -150,9 +150,34 @@ public class ATMServiceTest {
         atmService = new ATMServiceImpl(customerRepository, accountRepository, transactionRepository, paymentRepository);
 
         account = atmService.getAccount(account.getId());
-        double amountBeforeDeposit = account.getBalanceAmount();
 
         atmService.deposit(account.getId(), amountToDeposit);
+        account = atmService.getAccount(account.getId());
+
+        Assert.assertEquals(account.getBalanceAmount(), newBalance);
+    }
+
+    @Test
+    public void testWithdraw() {
+        Account account = accounts.get(0);
+        double amountToWithdraw = 10;
+        double newBalance = account.getBalanceAmount() - amountToWithdraw;
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(-amountToWithdraw);
+        transaction.setAccountId(account.getId());
+        transaction.setTotalBalance(newBalance);
+        transaction.setCreatedAt(LocalDate.now());
+
+        // mock
+        when(transactionRepository.save(transaction)).thenReturn(transaction);
+        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        atmService = new ATMServiceImpl(customerRepository, accountRepository, transactionRepository, paymentRepository);
+
+        account = atmService.getAccount(account.getId());
+
+        atmService.withdraw(account.getId(), amountToWithdraw);
         account = atmService.getAccount(account.getId());
 
         Assert.assertEquals(account.getBalanceAmount(), newBalance);

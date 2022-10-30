@@ -14,6 +14,7 @@ public class Account {
     private long customerId;
     private String number;
     private double balanceAmount;
+    private double owedAmount;
     private String status;
     private LocalDate createdAt;
     private LocalDate updatedAt;
@@ -22,11 +23,12 @@ public class Account {
 
     }
 
-    public Account(long id, long customerId, String number, double balanceAmount, String status, LocalDate createdAt, LocalDate updatedAt) {
+    public Account(long id, long customerId, String number, double balanceAmount, double owedAmount, String status, LocalDate createdAt, LocalDate updatedAt) {
         this.id = id;
         this.customerId = customerId;
         this.number = number;
         this.balanceAmount = balanceAmount;
+        this.owedAmount = owedAmount;
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -64,6 +66,14 @@ public class Account {
         this.balanceAmount = balanceAmount;
     }
 
+    public double getOwedAmount() {
+        return owedAmount;
+    }
+
+    public void setOwedAmount(double owedAmount) {
+        this.owedAmount = owedAmount;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -93,12 +103,12 @@ public class Account {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Account account = (Account) o;
-        return id == account.id && customerId == account.customerId && Double.compare(account.balanceAmount, balanceAmount) == 0 && Objects.equals(number, account.number) && Objects.equals(status, account.status) && Objects.equals(createdAt, account.createdAt) && Objects.equals(updatedAt, account.updatedAt);
+        return id == account.id && customerId == account.customerId && Double.compare(account.balanceAmount, balanceAmount) == 0 && Double.compare(account.owedAmount, owedAmount) == 0 && Objects.equals(number, account.number) && Objects.equals(status, account.status) && Objects.equals(createdAt, account.createdAt) && Objects.equals(updatedAt, account.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, customerId, number, balanceAmount, status, createdAt, updatedAt);
+        return Objects.hash(id, customerId, number, balanceAmount, owedAmount, status, createdAt, updatedAt);
     }
 
     @Override
@@ -108,6 +118,7 @@ public class Account {
                 ", customerId=" + customerId +
                 ", number='" + number + '\'' +
                 ", balanceAmount=" + balanceAmount +
+                ", owedAmount=" + owedAmount +
                 ", status='" + status + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +

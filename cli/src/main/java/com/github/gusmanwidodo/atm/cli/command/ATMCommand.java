@@ -1,8 +1,11 @@
 package com.github.gusmanwidodo.atm.cli.command;
 
 import com.github.gusmanwidodo.atm.core.constant.AuthData;
+import com.github.gusmanwidodo.atm.core.constant.Bank;
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
+import com.github.gusmanwidodo.atm.core.model.Payment;
+import com.github.gusmanwidodo.atm.core.model.Transaction;
 import com.github.gusmanwidodo.atm.core.service.ATMService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
@@ -10,6 +13,7 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
 import java.util.HashMap;
+import java.util.List;
 
 @ShellComponent
 public class ATMCommand {
@@ -20,7 +24,7 @@ public class ATMCommand {
         this.atmService = atmService;
     }
 
-    @ShellMethod(key = "login", value = "Logs in as this customer and creates the customer if not exist")
+    @ShellMethod(key = "login", value = "login [name] - Logs in as this customer and creates the customer if not exist")
     public void login(@ShellOption String userName) {
         atmService.login(userName);
         HashMap<String, Long> authData = atmService.getAuthData();
@@ -29,37 +33,58 @@ public class ATMCommand {
         Account account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
 
         System.out.println("Hello, " + customer.getUserName() + "!");
-        printBalance(account.getBalanceAmount());
+
+        printBalanceAndOwed(authData.get(AuthData.ACCOUNT_ID));
     }
 
-    @ShellMethod(key = "deposit", value = "Deposits this amount to the logged in customer")
+    @ShellMethod(key = "deposit", value = "deposit [amount] - Deposits this amount to the logged in customer")
     public void deposit(@ShellOption double amount) {
         HashMap<String, Long> authData = atmService.getAuthData();
         Account account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
         atmService.deposit(account.getId(), amount);
 
-        account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
-        printBalance(account.getBalanceAmount());
+        printBalanceAndOwed(authData.get(AuthData.ACCOUNT_ID));
     }
 
-    @ShellMethod(key = "transfer", value = "Deposits this amount to the logged in customer")
+    @ShellMethod(key = "withdraw", value = "withdraw [amount] - Withdraws this amount from the logged in customer")
+    public void withdraw(@ShellOption double amount) {
+        HashMap<String, Long> authData = atmService.getAuthData();
+        Account account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
+        atmService.withdraw(account.getId(), amount);
+
+        printBalanceAndOwed(authData.get(AuthData.ACCOUNT_ID));
+    }
+
+    @ShellMethod(key = "transfer", value = "transfer [target] [amount] - Transfers this amount from the logged in customer to the target customer")
     public void transfer(@ShellOption String userName, @ShellOption double amount) {
-        double balance = 0 + amount;
-        System.out.println("Transferred $" + amount + " to " + userName);
-        printBalance(balance);
+        // sender
+        HashMap<String, Long> authData = atmService.getAuthData();
+        Account account = atmService.getAccount(authData.get(AuthData.ACCOUNT_ID));
 
-        double owedAmount = 20;
-        System.out.println("Owed $" + owedAmount + " to " + userName);
+        // beneficiary
+        Customer customerBeneficiary = atmService.getBeneficiary(userName);
+        Account accountBeneficiary = atmService.getBeneficiaryAccount(customerBeneficiary.getId());
+        
+        atmService.transfer(account.getId(), amount, Bank.INTERNAL, accountBeneficiary.getNumber(), customerBeneficiary.getFullName());
+
+        System.out.println("Transferred $" + amount + " to " + userName);
     }
 
-    @ShellMethod(key = "logout", value = "Logs out of the current customer")
+    @ShellMethod(key = "logout", value = "logout - Logs out of the current customer")
     public void logout() {
         HashMap<String, Long> authData = atmService.getAuthData();
         Customer customer = atmService.getCustomer(authData.get(AuthData.CUSTOMER_ID));
         System.out.println("Goodbye, " + customer.getUserName() + "!");
     }
 
-    void printBalance(double balance) {
-        System.out.println("Your balance is $" + balance);
+    void printBalanceAndOwed(long accountId) {
+        Account account = atmService.getAccount(accountId);
+
+        System.out.println("Your balance is $" + account.getBalanceAmount());
+
+        if (account.getBalanceAmount() < 0) {
+            List<Transaction> owedTransactions = atmService.GetOwedTransactions(account.getId());
+            owedTransactions.forEach(t -> System.out.println("Owed $" + (t.getAmount() - t.getPrevBalance()) + " to " + t.getPayment()));
+        }
     }
 }
