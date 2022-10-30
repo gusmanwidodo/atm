@@ -5,7 +5,6 @@ import com.github.gusmanwidodo.atm.core.constant.Bank;
 import com.github.gusmanwidodo.atm.core.model.Account;
 import com.github.gusmanwidodo.atm.core.model.Customer;
 import com.github.gusmanwidodo.atm.core.model.Payment;
-import com.github.gusmanwidodo.atm.core.model.Transaction;
 import com.github.gusmanwidodo.atm.core.service.ATMService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
@@ -67,7 +66,7 @@ public class ATMCommand {
         
         atmService.transfer(account.getId(), amount, Bank.INTERNAL, accountBeneficiary.getNumber(), customerBeneficiary.getFullName());
 
-        System.out.println("Transferred $" + amount + " to " + userName);
+        printBalanceAndOwed(authData.get(AuthData.ACCOUNT_ID));
     }
 
     @ShellMethod(key = "logout", value = "logout - Logs out of the current customer")
@@ -82,9 +81,18 @@ public class ATMCommand {
 
         System.out.println("Your balance is $" + account.getBalanceAmount());
 
-        if (account.getBalanceAmount() < 0) {
-            List<Transaction> owedTransactions = atmService.GetOwedTransactions(account.getId());
-            owedTransactions.forEach(t -> System.out.println("Owed $" + (t.getAmount() - t.getPrevBalance()) + " to " + t.getPayment()));
+        if (account.getOwedAmount() != 0) {
+            List<Payment> payments = atmService.getPendingPayments(account.getId());
+            payments
+                .forEach(p -> {
+                    String to = "to";
+                    String holder = p.getToAccountHolder();
+                    if (p.getAccountId() != account.getId()) {
+                        to = "from";
+                        holder = p.getFromAccountHolder();
+                    }
+                    System.out.println("Owed $" + p.getAmount() + " " + to + " " + holder);
+                });
         }
     }
 }

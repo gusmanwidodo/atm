@@ -92,7 +92,7 @@ public class ATMServiceImpl implements ATMService {
         LocalDate now = LocalDate.now();
         customer.setCreatedAt(now);
         customer.setUpdatedAt(now);
-        customerRepository.save(customer);
+        customer = customerRepository.save(customer);
 
         long accountNumber = 999999999 + customer.getId();
 
@@ -125,6 +125,15 @@ public class ATMServiceImpl implements ATMService {
         account.setBalanceAmount(newBalanceAmount);
         account.setUpdatedAt(LocalDate.now());
         accountRepository.save(account);
+
+        // autodebet
+        if (account.getOwedAmount() < 0) {
+            List<Payment> payments = paymentRepository.findByPending(account.getNumber());
+            payments.stream().filter(p -> p.getAccountId() == account.getId()).forEach(p -> {
+                settlePayment(p.getId());
+                transfer(p.getAccountId(), p.getAmount(), p.getToAccountBank(), p.getToAccountNumber(), p.getToAccountHolder());
+            });
+        }
     }
 
     @Override
@@ -146,72 +155,110 @@ public class ATMServiceImpl implements ATMService {
 
     @Override
     public void transfer(long accountId, double amount, String accountBank, String accountNumber, String accountHolder) {
+
+        // sender
         Account fromAccount = this.getAccount(accountId);
         Customer fromCustomer = this.getCustomer(fromAccount.getCustomerId());
 
+        // beneficiary
         Account toAccount = accountRepository.findByNumber(accountNumber).get();
         Customer toCustomer = this.getCustomer(toAccount.getCustomerId());
 
-        double transactionAmount = -amount;
-        double prevBalance = fromAccount.getBalanceAmount();
-        double totalBalance = prevBalance + transactionAmount;
-        double owedBalance = fromAccount.getOwedAmount();
+        // manage transfer
+        TransferManager transferManager = new TransferManager(
+            fromAccount.getBalanceAmount(),
+            fromAccount.getOwedAmount(),
+            toAccount.getBalanceAmount(),
+            toAccount.getOwedAmount()
+        );
 
-        if (totalBalance < 0) {
-            owedBalance += totalBalance;
-            totalBalance = 0;
+        transferManager.transfer(amount);
+
+        // available payment
+        if (transferManager.getAvailablePaymentAmount() > 0) {
+            Payment payment = new Payment();
+            payment.setAmount(transferManager.getAvailablePaymentAmount());
+            payment.setAccountId(fromAccount.getId());
+            payment.setFromAccountBank(Bank.INTERNAL);
+            payment.setFromAccountNumber(fromAccount.getNumber());
+            payment.setFromAccountHolder(fromCustomer.getUserName());
+            payment.setToAccountBank(Bank.INTERNAL);
+            payment.setToAccountNumber(toAccount.getNumber());
+            payment.setToAccountHolder(toCustomer.getUserName());
+            payment.setFee(0);
+            payment.setStatus(Status.SUCCESS);
+            LocalDate now = LocalDate.now();
+            payment.setCreatedAt(now);
+            payment.setUpdatedAt(now);
+            paymentRepository.save(payment);
+
+            Transaction transaction = new Transaction();
+            transaction.setAccountId(fromAccount.getId());
+            transaction.setRefId(payment.getId());
+            transaction.setRefType(RefType.TRANSFER);
+            transaction.setPrevBalance(fromAccount.getBalanceAmount());
+            transaction.setAmount(-transferManager.getAvailablePaymentAmount());
+            transaction.setTotalBalance(transferManager.getSenderBalance());
+            transaction.setCreatedAt(LocalDate.now());
+            transactionRepository.save(transaction);
+
+            fromAccount.setBalanceAmount(transferManager.getSenderBalance());
+            accountRepository.save(fromAccount);
+
+            Transaction transaction2 = new Transaction();
+            transaction2.setAccountId(toAccount.getId());
+            transaction2.setRefId(payment.getId());
+            transaction2.setRefType(RefType.TRANSFER);
+            transaction2.setPrevBalance(toAccount.getBalanceAmount());
+            transaction2.setAmount(transferManager.getAvailablePaymentAmount());
+            transaction2.setTotalBalance(transferManager.getBeneficiaryBalance());
+            transaction2.setCreatedAt(LocalDate.now());
+            transactionRepository.save(transaction2);
+
+            toAccount.setBalanceAmount(transferManager.getBeneficiaryBalance());
+            accountRepository.save(toAccount);
+
+            System.out.println("Transferred $" + transferManager.getAvailablePaymentAmount() + " to " + toCustomer.getUserName());
         }
 
-        // create payment record
-        Payment payment = new Payment();
-        payment.setAmount(amount);
-        payment.setAccountId(fromAccount.getId());
-        payment.setFromAccountBank(Bank.INTERNAL);
-        payment.setFromAccountNumber(fromAccount.getNumber());
-        payment.setFromAccountHolder(fromCustomer.getUserName());
-        payment.setToAccountBank(Bank.INTERNAL);
-        payment.setToAccountNumber(toAccount.getNumber());
-        payment.setToAccountHolder(toCustomer.getUserName());
-        payment.setFee(0);
-        payment.setStatus(Status.PENDING);
-        LocalDate now = LocalDate.now();
-        payment.setCreatedAt(now);
-        payment.setUpdatedAt(now);
-        paymentRepository.save(payment);
+        // pending payment
+        if (transferManager.getPendingPaymentAmount() > 0) {
+            Payment payment2 = new Payment();
+            payment2.setAmount(transferManager.getPendingPaymentAmount());
+            payment2.setAccountId(fromAccount.getId());
+            payment2.setFromAccountBank(Bank.INTERNAL);
+            payment2.setFromAccountNumber(fromAccount.getNumber());
+            payment2.setFromAccountHolder(fromCustomer.getUserName());
+            payment2.setToAccountBank(Bank.INTERNAL);
+            payment2.setToAccountNumber(toAccount.getNumber());
+            payment2.setToAccountHolder(toCustomer.getUserName());
+            payment2.setFee(0);
+            payment2.setStatus(Status.PENDING);
+            LocalDate now = LocalDate.now();
+            payment2.setCreatedAt(now);
+            payment2.setUpdatedAt(now);
+            paymentRepository.save(payment2);
 
-        Transaction transaction1 = new Transaction();
-        transaction1.setRefId(payment.getId());
-        transaction1.setRefType(RefType.TRANSFER);
-        transaction1.setPrevBalance(prevBalance);
-        transaction1.setAmount(transactionAmount);
-        transaction1.setAccountId(fromAccount.getId());
-        transaction1.setTotalBalance(totalBalance);
-        transaction1.setCreatedAt(LocalDate.now());
-        transactionRepository.save(transaction1);
+            fromAccount.setOwedAmount(transferManager.getSenderOwedBalance());
+            accountRepository.save(fromAccount);
 
-        fromAccount.setBalanceAmount(totalBalance);
-        fromAccount.setOwedAmount(owedBalance);
-        accountRepository.save(fromAccount);
-
-        // add beneficiary balance
-        toAccount.setBalanceAmount(toAccount.getBalanceAmount() + amount);
-        Transaction transaction2 = new Transaction();
-        transaction2.setAmount(amount);
-        transaction2.setAccountId(toAccount.getId());
-        transaction2.setTotalBalance(toAccount.getBalanceAmount());
-        transaction2.setCreatedAt(LocalDate.now());
-
-        List<Transaction> transactions = new ArrayList<Transaction>();
-        transactions.add(transaction1);
-        transactions.add(transaction2);
-        transactionRepository.save(transaction2);
-
-        accountRepository.save(toAccount);
+            toAccount.setOwedAmount(transferManager.getBeneficiaryOwedBalance());
+            accountRepository.save(toAccount);
+        }
     }
 
     @Override
-    public List<Transaction> GetOwedTransactions(long accountId) {
-        List<Transaction> transactions = transactionRepository.findByOwedBalance(accountId, RefType.TRANSFER);
-        return transactions;
+    public void settlePayment(long paymentId) {
+        Optional<Payment> optionalPayment = paymentRepository.findById(paymentId);
+        Payment payment = optionalPayment.get();
+        payment.setStatus(Status.FAILED);
+        paymentRepository.save(payment);
+    }
+
+    @Override
+    public List<Payment> getPendingPayments(long accountId) {
+        Account account = this.getAccount(accountId);
+        List<Payment> payments = paymentRepository.findByPending(account.getNumber());
+        return payments;
     }
 }

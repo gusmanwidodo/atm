@@ -48,8 +48,8 @@ public class ATMServiceTest {
         customers.add(new Customer(2, "bob", "Bob", "Smith", "active", now, now));
 
         accounts = new ArrayList<Account>();
-        accounts.add(new Account(1, 1, "987654321", 100, "active", now, now));
-        accounts.add(new Account(2, 2, "987654322", 120, "active", now, now));
+        accounts.add(new Account(1, 1, "987654321", 100, 0, "active", now, now));
+        accounts.add(new Account(2, 2, "987654322", 120, 0, "active", now, now));
     }
 
 

@@ -21,7 +21,6 @@ public class Transaction {
     private LocalDate createdAt;
 
     @OneToOne
-    @JoinColumn(name = "refId")
     private Payment payment;
 
     public Transaction() {
