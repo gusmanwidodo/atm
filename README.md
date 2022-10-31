@@ -1,7 +1,10 @@
 # ATM CLI
 This project is a Command Line Interface (CLI) to simulate an interaction of an ATM with a retail bank.
 ### Screenshots
-![App Architecture](./atm-cli-screenshot.png?raw=true "App Architecture")
+![CLI](./atm-cli-screenshot.png?raw=true "CLI")
+
+
+![Unit Testing](./test-screenshot.png?raw=true "Unit Testing")
 
 ## Architecture
 ![App Architecture](./atm-cli-architecture.png?raw=true "App Architecture")
@@ -29,6 +32,9 @@ $ mvn clean install
 ```shell
 java -jar ./cli/target/cli-0.0.1-SNAPSHOT.jar
 ```
+** Testable Class
+`com.github.gusmanwidodo.atm.core.service.ATMServiceTest`
+
 
 ## Specification
 ### Commands
