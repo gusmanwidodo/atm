@@ -7,12 +7,19 @@ public class TransferManager {
     private double beneficiaryOwedBalance;
     private double availablePaymentAmount;
     private double pendingPaymentAmount;
+    private double beneficiaryToSenderOwedBalance;
 
-    public TransferManager(double senderBalance, double senderOwedBalance, double beneficiaryBalance, double beneficiaryOwedBalance) {
+    public TransferManager(
+            double senderBalance,
+            double senderOwedBalance,
+            double beneficiaryBalance,
+            double beneficiaryOwedBalance,
+            double beneficiaryToSenderOwedBalance) {
         this.senderBalance = senderBalance;
         this.senderOwedBalance = senderOwedBalance;
         this.beneficiaryBalance = beneficiaryBalance;
         this.beneficiaryOwedBalance = beneficiaryOwedBalance;
+        this.beneficiaryToSenderOwedBalance = beneficiaryToSenderOwedBalance;
     }
 
     public void transfer(double amount) {
@@ -31,6 +38,17 @@ public class TransferManager {
             pendingPaymentAmount -= senderBalance;
 
             senderBalance = 0;
+        }
+
+        if (beneficiaryToSenderOwedBalance > 0) {
+            senderOwedBalance -= amount;
+            beneficiaryOwedBalance += amount;
+            availablePaymentAmount -= beneficiaryToSenderOwedBalance;
+        }
+
+        if (availablePaymentAmount < 0) {
+            pendingPaymentAmount += availablePaymentAmount;
+            availablePaymentAmount = 0;
         }
     }
 

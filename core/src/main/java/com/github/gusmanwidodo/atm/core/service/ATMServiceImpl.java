@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class ATMServiceImpl implements ATMService {
@@ -177,12 +178,21 @@ public class ATMServiceImpl implements ATMService {
         Account toAccount = accountRepository.findByNumber(accountNumber).get();
         Customer toCustomer = this.getCustomer(toAccount.getCustomerId());
 
+        // check owed to pay
+        double beneficiaryToSenderOwedBalance = 0;
+        Optional<Payment> owedPayment = paymentRepository.findOwedToPay(toAccount.getNumber(), fromAccount.getNumber());
+
+        if (owedPayment.isPresent()) {
+            beneficiaryToSenderOwedBalance = owedPayment.get().getAmount();
+        }
+
         // manage transfer
         TransferManager transferManager = new TransferManager(
                 fromAccount.getBalanceAmount(),
                 fromAccount.getOwedAmount(),
                 toAccount.getBalanceAmount(),
-                toAccount.getOwedAmount()
+                toAccount.getOwedAmount(),
+                beneficiaryToSenderOwedBalance
         );
 
         transferManager.transfer(amount);
@@ -257,6 +267,37 @@ public class ATMServiceImpl implements ATMService {
 
             toAccount.setOwedAmount(transferManager.getBeneficiaryOwedBalance());
             accountRepository.save(toAccount);
+        }
+
+        // refresh owed
+        if (transferManager.getPendingPaymentAmount() < 0) {
+            fromAccount.setOwedAmount(transferManager.getSenderOwedBalance());
+            accountRepository.save(fromAccount);
+
+            toAccount.setOwedAmount(transferManager.getBeneficiaryOwedBalance());
+            accountRepository.save(toAccount);
+
+            if (owedPayment.isPresent()) {
+                Payment payment = owedPayment.get();
+                payment.setStatus(Status.FAILED);
+                paymentRepository.save(payment);
+            }
+
+            Payment newPayment = new Payment();
+            newPayment.setAmount(Math.abs(transferManager.getPendingPaymentAmount()));
+            newPayment.setAccountId(toAccount.getId());
+            newPayment.setFromAccountBank(Bank.INTERNAL);
+            newPayment.setFromAccountNumber(toAccount.getNumber());
+            newPayment.setFromAccountHolder(toCustomer.getUserName());
+            newPayment.setToAccountBank(Bank.INTERNAL);
+            newPayment.setToAccountNumber(fromAccount.getNumber());
+            newPayment.setToAccountHolder(fromCustomer.getUserName());
+            newPayment.setFee(0);
+            newPayment.setStatus(Status.PENDING);
+            LocalDate now = LocalDate.now();
+            newPayment.setCreatedAt(now);
+            newPayment.setUpdatedAt(now);
+            paymentRepository.save(newPayment);
         }
     }
 

@@ -15,6 +15,7 @@
     <properties>
         <java.version>11</java.version>
         <spring-shell.version>2.1.2</spring-shell.version>
+        <skipTests>true</skipTests>
     </properties>
     <dependencies>
         <dependency>

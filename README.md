@@ -1,10 +1,18 @@
 # ATM CLI
+This project is a Command Line Interface (CLI) to simulate an interaction of an ATM with a retail bank.
+### Screenshots
+![App Architecture](./atm-cli-screenshot.png?raw=true "App Architecture")
 
 ## Architecture
 ![App Architecture](./atm-cli-architecture.png?raw=true "App Architecture")
 ### presenter: spring shell
 ### core module: business logic
 ### DB infra: springboot JPA + H2 database
+
+## Prerequisites
+Ensure you have this installed before proceeding further.
+- Java 11
+- Maven 3.8.1+
 
 ## Get Started
 - Clone repository
@@ -13,9 +21,13 @@
 - Enjoy!
 
 ### Running for development
+#### Build
 ```shell
 $ mvn clean install
-$ mvn spring-boot:run
+```
+#### Start
+```shell
+java -jar ./cli/target/cli-0.0.1-SNAPSHOT.jar
 ```
 
 ## Specification
@@ -37,8 +49,15 @@ $ mvn spring-boot:run
 ### Structure
 #### Core Module
 ```shell
-➜  atm git:(main) ✗ tree core/src/main/java/com/github/gusmanwidodo/atm/core
+➜  atm git:(main) ✗  tree core/src/main/java/com/github/gusmanwidodo/atm/core
 core/src/main/java/com/github/gusmanwidodo/atm/core
+|-- constant
+|   |-- AuthData.java
+|   |-- Bank.java
+|   |-- RefType.java
+|   `-- Status.java
+|-- exception
+|   `-- AmountInvalidException.java
 |-- model
 |   |-- Account.java
 |   |-- Customer.java
@@ -51,11 +70,29 @@ core/src/main/java/com/github/gusmanwidodo/atm/core
 |   `-- TransactionRepository.java
 `-- service
     |-- ATMService.java
-    `-- ATMServiceImpl.java
+    |-- ATMServiceImpl.java
+    `-- TransferManager.java
 
-3 directories, 10 files
+5 directories, 16 files
+
 
 ```
+#### Cli
+```shell
+➜  atm git:(main) ✗  tree cli/src/main/java/com/github/gusmanwidodo/atm/cli
+cli/src/main/java/com/github/gusmanwidodo/atm/cli
+|-- CliApplication.java
+`-- command
+    `-- ATMCommand.java
+
+1 directory, 2 files
+
+```
+
+## Todo List
+- Enrich Unit Testing with various cases
+- Detail Exception class
+- etc
 
 ## Author
 - [Gusman Widodo](https://linkedin.com/gusmanwidodo) <[gusmanwidodo@gmail.com](mailto:gusmanwidodo@gmail.com)>
